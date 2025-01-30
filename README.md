@@ -1,17 +1,18 @@
 # **Sensor Fault Detection Dashboard**
 
-This project is a **real-time sensor fault detection dashboard** built with **Flask** and **Chart.js**. It collects simulated sensor data and displays it dynamically on a web-based dashboard, updating in real-time using **WebSockets**.
+This project is a **real-time sensor fault detection dashboard** built with **Flask** and **Chart.js**. It simulates sensor data and displays it dynamically on a web-based dashboard, updating in real-time using **WebSockets**.
 
-The dashboard visualizes sensor data, and any anomaly or sensor fault is highlighted in **red**.
+The dashboard visualizes simulated sensor data, and any anomaly or sensor fault is highlighted in **red**.
 
 ## **Features**
 
 - Real-time sensor data visualization using **Chart.js**.
 - **WebSocket**-based communication for live data updates.
-- **Anomaly detection**: Sensor data is processed and checked for faults.
+- **Simulated sensor values** that mimic real-time sensor data.
+- **Anomaly detection**: Simulated data is processed and checked for faults.
 - **Flask backend**: Flask serves as the backend to simulate data and detect anomalies.
 - **Responsive UI**: The dashboard adapts to different screen sizes.
-- **Historical data storage**: The sensor data is stored for future analysis (use an SQLite or PostgreSQL database).
+- **Historical data storage**: The simulated sensor data is stored for future analysis (optional, using SQLite or PostgreSQL).
 
 ## **Tech Stack**
 
