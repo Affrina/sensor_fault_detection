@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Fault Detection Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            margin-bottom: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .status-indicator {
+            padding: 12px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .status-indicator.normal {
+            background-color: #28a745;
+        }
+
+        .status-indicator.warning {
+            background-color: #ffc107;
+        }
+
+        .status-indicator.danger {
+            background-color: #dc3545;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 500px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .row {
+            margin-top: 20px;
+        }
+
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-body {
+            text-align: center;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .sensor-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .sensor-card {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .sensor-card h5 {
+            margin-bottom: 15px;
+        }
+
+        .sensor-card p {
+            font-size: 1.25rem;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Sensor Fault Detection Dashboard</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="#">Home</a>
+                    </li>
+                    <!-- <li class="nav-item">
+                        <a class="nav-link" href="#">Settings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">About</a>
+                    </li> -->
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Sensor Fault Detection Dashboard</h1>
+        <div class="row">
+            <!-- Sensor Status Widget -->
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="sensor-card">
+                    <h5 class="card-title">Sensor Status</h5>
+                    <div id="sensorStatus" class="status-indicator normal">Waiting for data...</div>
+                </div>
+            </div>
+
+            <!-- Sensor Value Widget -->
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="sensor-card">
+                    <h5 class="card-title">Sensor Value</h5>
+                    <p id="sensorValue" class="sensor-value">-</p>
+                </div>
+            </div>
+
+            <!-- Graph Widget -->
+            <div class="col-lg-12 col-md-12 col-sm-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Sensor Data Chart</h5>
+                        <div class="chart-container">
+                            <canvas id="sensorChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const anomalyThreshold = 40; // Threshold for detecting anomalies
+
+        // Function to simulate sensor data for testing
+        async function fetchSensorData() {
+            let sensorValue = Math.floor(Math.random() * 50) + 1;
+            const response = await fetch("/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ sensor_value: sensorValue })
+            });
+            const data = await response.json();
+            return { value: sensorValue, status: data.status };
+        }
+
+        const ctx = document.getElementById("sensorChart").getContext("2d");
+        const sensorChart = new Chart(ctx, {
+            type: "line",
+            data: { labels: [], datasets: [{ label: "Sensor Value", borderColor: "blue", data: [] }] },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+
+        function updateStatus(status) {
+            const statusElement = document.getElementById("sensorStatus");
+            switch (status) {
+                case "Normal":
+                    statusElement.classList.remove("warning", "danger");
+                    statusElement.classList.add("normal");
+                    break;
+                case "Warning":
+                    statusElement.classList.remove("normal", "danger");
+                    statusElement.classList.add("warning");
+                    break;
+                case "Fault":
+                    statusElement.classList.remove("normal", "warning");
+                    statusElement.classList.add("danger");
+                    break;
+            }
+            statusElement.textContent = `Status: ${status}`;
+        }
+
+        // Function to check if the value is an anomaly
+        function checkAnomaly(value) {
+            return value > anomalyThreshold;
+        }
+
+        async function updateDashboard() {
+            const sensorData = await fetchSensorData();  // Fetch new sensor data
+            const time = new Date().toLocaleTimeString();  // Get the current time (for x-axis)
+
+            document.getElementById("sensorValue").textContent = sensorData.value;  // Update value text
+            
+            // Check if sensor value is an anomaly
+            if (checkAnomaly(sensorData.value)) {
+                updateStatus("Fault"); // Anomaly detected, set status as 'Fault'
+            } else {
+                updateStatus("Normal"); // Normal sensor value
+            }
+
+            // Update chart data
+            sensorChart.data.labels.push(time);  // Add time to x-axis
+            sensorChart.data.datasets[0].data.push(sensorData.value);  // Add sensor value to y-axis
+
+            sensorChart.update();  // Refresh the chart to display the new data
+        }
+
+        // Update every 3 seconds
+        setInterval(updateDashboard, 3000);
+    </script>
+
+    <!-- Bootstrap JS (Optional for interactive components) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
